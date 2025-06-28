@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Java Casino Simulation</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
+
+      :root {
+        --clr-bg: #1a1a1a;
+        --clr-text: #e0e0e0;
+        --clr-input-bg: #2c2c2c;
+        --clr-red: #ff5555;
+        --clr-cyan: #50fa7b;
+        --clr-yellow: #f1fa8c;
+        --clr-purple: #bd93f9;
+        --clr-green: #8be9fd;
+      }
+
+      body {
+        background-color: var(--clr-bg);
+        color: var(--clr-text);
+        font-family: "Roboto Mono", monospace;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        margin: 0;
+        padding: 2rem 1rem;
+        box-sizing: border-box;
+      }
+
+      #terminal-container {
+        width: 100%;
+        max-width: 800px;
+        border: 1px solid var(--clr-input-bg);
+        background-color: #0d0d0d;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+
+      #terminal {
+        height: 70vh;
+        overflow-y: auto;
+        padding: 1.5rem;
+        line-height: 1.6;
+        font-size: 0.9rem;
+      }
+
+      #terminal pre {
+        font-family: "Roboto Mono", monospace;
+        white-space: pre-wrap;
+        margin: 0;
+      }
+
+      .terminal-line {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      #input-line {
+        display: flex;
+        padding: 0.5rem 1.5rem;
+        background-color: var(--clr-input-bg);
+        border-top: 1px solid var(--clr-bg);
+      }
+
+      #input-line .prompt-symbol {
+        margin-right: 0.5rem;
+        color: var(--clr-cyan);
+        font-weight: 700;
+      }
+
+      #user-input {
+        flex-grow: 1;
+        background: transparent;
+        border: none;
+        color: var(--clr-text);
+        font-family: "Roboto Mono", monospace;
+        font-size: 0.9rem;
+      }
+
+      #user-input:focus {
+        outline: none;
+      }
+
+      /* Color classes from Color.java */
+      .text-red {
+        color: var(--clr-red);
+      }
+      .text-cyan {
+        color: var(--clr-cyan);
+      }
+      .text-yellow {
+        color: var(--clr-yellow);
+      }
+      .text-purple {
+        color: var(--clr-purple);
+      }
+      .text-green {
+        color: var(--clr-green);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal-container">
+      <div id="terminal"></div>
+      <div id="input-line">
+        <span class="prompt-symbol">&gt;</span>
+        <input type="text" id="user-input" autofocus autocomplete="off" />
+      </div>
+    </div>
+
+    <script>
+      // --- JAVASCRIPT SIMULATION OF THE ENTIRE JAVA CASINO APPLICATION ---
+
+      // =================================================================
+      // 1. ASSET STORAGE (from your .txt files)
+      // =================================================================
+      const ASSETS = {
+        WELCOME: `
+                       ♠️❤️   ❤️❤️❤️❤️❤️❤️    ♠️❤️      ♣️❤️    ❤️❤️❤️❤️❤️❤️
+                       ♠️❤️   ❤️♠️     ♠️❤️     ♠️❤️     ♣️❤️️    ❤️♠️     ♠️❤️
+️️️                       ♠️❤️️   ❤️♠️️     ♠️❤️      ♠️❤️    ♣️❤️    ❤️♠️     ♠️❤️
+                       ♠️❤️️   ❤️♠️♠️♠️♠️❤️       ♠️❤️   ♣️❤️️     ❤️♠️♠️♠️♠️❤️
+              ❤️♣️    ♠️❤️   ❤️♠️     ♠️❤️        ♠️❤️  ♣️❤️     ❤️♠️     ♠️❤️
+              ❤️♣️♠️♠️♠️❤️️   ❤️️♠️    ♠️❤️         ♠️❤️♣️❤️️       ❤️♠️     ♠️❤️
+              ❤️❤️❤️❤️❤️❤️   ❤️♠️    ♠️❤️          ♠️❤️❤️️         ❤️♠️     ♠️❤️
+
+        ❤️❤️❤️❤️❤️❤️   ❤️❤️❤️❤️❤️❤️    ❤️❤️❤️❤️❤️❤️    ♠️❤️    ♠️❤️     ♠️❤️   ❤️❤️❤️❤️❤️❤️
+        ❤️♣️♣️♣️♣️♣️   ❤️♠️     ♠️❤️   ❤️♠️♠️♠️♠️♠️     ♠️❤️   ♠️❤️♠️   ♠️❤️   ❤️♠️     ♠️❤️
+        ❤️♣️            ❤️♠️     ♠️❤️   ❤️♠️              ♠️❤️   ♠️❤️ ♠️  ♠️❤️   ❤️♠️     ♠️❤️
+        ❤️♣️            ❤️♠️♠️♠️♠️❤️    ❤️❤️❤️❤️❤️️❤️    ♠️❤️    ♠️❤️  ♠️ ♠️❤️   ❤️♠️     ♠️❤️
+        ❤️♣️            ❤️♠️    ♠️❤️              ♠️❤️    ♠️❤️    ♠️❤️  ♠️♠️❤️    ❤️♠️     ♠️❤️
+        ❤️♣️♣️♣️♣️♣️   ❤️♠️    ♠️❤️     ♠️♠️♠️♠️♠️❤️    ♠️❤️    ♠️❤️    ♠️❤️    ❤️♠️     ♠️❤️
+        ❤️❤️❤️❤️❤️❤️   ❤️♠️    ♠️❤️     ❤️❤️❤️❤️❤️❤️    ♠️❤️    ♠️❤️     ♠️❤️   ❤️❤️❤️❤️❤️❤️
+        `,
+        BLACKJACK_RULES: `
+************************************************************************************************************************
+**************************************** BlackJack Instructions ********************************************************
+************************************************************************************************************************
+*** ***
+*** The goal of Blackjack is to beat the dealer’s hand without going over 21.                                     ***
+*** In Blackjack, every player is competing against the dealer—not each other. In a given round, the              ***
+*** player’s ultimate goal is to get a hand that’s higher than the dealer’s (without being higher than 21, or     ***
+*** "busting"). Only by beating the dealer can a player win their bet. Players determine the value of their       ***
+*** hand by tallying up the point values of their cards:                                                          ***
+*** ***
+*** 2 through 10: The number listed on the card (e.g., 2 is worth 2 points)                                   ***
+*** Jack, Queen, King: 10 points                                                                              ***
+*** Ace: 1 or 11 points (the player gets to choose)                                                           ***
+*** An Ace and a 10, Jack, Queen, or King equals 21 points and is known as a Blackjack.                       ***
+*** ***
+*** - All the players make a bet with their chips.                                                               ***
+*** - The dealer gives a card to each player as well as themselves.                                              ***
+*** - The dealer hands out a second card to every player.                                                        ***
+*** - Decide if you want to stick or twist.                                                                      ***
+*** - Sticking simply means that you don’t want the dealer to give you another card.                             ***
+*** - Twisting means that you’d like the dealer to add another card to your hand.                                ***
+*** - The dealer reveals their second card and winners are determined.                                           ***
+*** ***
+************************************************************************************************************************
+************************************************* GOOD LUCK! ***********************************************************
+************************************************************************************************************************
+        `,
+        POKER_RULES: `
+************************************************************************************************************************
+**************************************** 3 CARD POKER INSTRUCTIONS *****************************************************
+************************************************************************************************************************
+*** ***
+*** - To start, the player places an ante wager and/or a pair plus wager, betting that they will have a hand of at   ***
+*** least a pair or better.                                                                                       ***
+*** - Three cards are then dealt face down to each player and to the dealer. You are only playing the dealer.        ***
+*** - The player will then look at his hand and determine to place a play wager or not. Optimum strategy says        ***
+*** the player should “play” all hands greater than Queen, Six and Four and fold all hands worse.                 ***
+*** - If a player folds, the hand is over. If the player places a play wager, the cards will be turned over.         ***
+*** - If the dealer has a hand of Jack-high or worse, the play wager is returned to the player. If the dealer has    ***
+*** a hand of Queen-high or better, both the play wager and the ante are paid out at 1 to 1 if the player wins.  ***
+*** ***
+*** -------------                                                        ***
+*** WINNING ORDER                                                        ***
+*** -------------                                                        ***
+*** Straight Flush                                                       ***
+*** Three of a Kind                                                       ***
+*** Straight                                                          ***
+*** Flush                                                            ***
+*** Pair                                                            ***
+*** High Card                                                          ***
+************************************************************************************************************************
+************************************************* GOOD LUCK! ***********************************************************
+************************************************************************************************************************
+        `,
+        // Note: Leaderboards are stored in memory for the session, not saved to a file.
+        BJ_SCORES: [
+          "##################################",
+          "###   Black Jack Leaderboard   ###",
+          "#####################################",
+        ],
+        POKER_SCORES: [
+          "#############################",
+          "###   Poker Leaderboard   ###",
+          "#############################",
+        ],
+      };
+
+      // =================================================================
+      // 2. TERMINAL & UI LOGIC
+      // =================================================================
+      const terminal = document.getElementById("terminal");
+      const input = document.getElementById("user-input");
+
+      const print = (message, colorClass = "") => {
+        const line = document.createElement("div");
+        line.className = "terminal-line";
+        if (colorClass) {
+          const coloredSpan = document.createElement("span");
+          coloredSpan.className = colorClass;
+          coloredSpan.textContent = message;
+          line.appendChild(coloredSpan);
+        } else {
+          line.textContent = message;
+        }
+        terminal.appendChild(line);
+        terminal.scrollTop = terminal.scrollHeight;
+      };
+
+      const printArt = (art) => {
+        const pre = document.createElement("pre");
+        pre.textContent = art;
+        terminal.appendChild(pre);
+        terminal.scrollTop = terminal.scrollHeight;
+      };
+
+      const clearTerminal = () => {
+        terminal.innerHTML = "";
+      };
+
+      let onInputCallback = null; // This will hold the function to call when user enters text
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const command = input.value;
+          print(`> ${command}`);
+          input.value = "";
+          if (onInputCallback) {
+            onInputCallback(command);
+          }
+        }
+      });
+
+      // =================================================================
+      // 3. CARD DECK IMPLEMENTATION (from CardDeck package)
+      // =================================================================
+      const SUITS = { HEARTS: "❤️", DIAMONDS: "♦️", SPADES: "♣️", CLUBS: "♠️" };
+      const SYMBOLS = {
+        TWO: "2",
+        THREE: "3",
+        FOUR: "4",
+        FIVE: "5",
+        SIX: "6",
+        SEVEN: "7",
+        EIGHT: "8",
+        NINE: "9",
+        TEN: "10",
+        JACK: "J",
+        QUEEN: "Q",
+        KING: "K",
+        ACE: "A",
+      };
+
+      class Card {
+        constructor(symbol, suit, value) {
+          this.symbol = symbol;
+          this.suit = suit;
+          this.value = value;
+        }
+        getCard() {
+          return this.symbol + this.suit;
+        }
+        compareTo(otherCard) {
+          return otherCard.value - this.value;
+        }
+      }
+
+      class Deck {
+        constructor() {
+          this.inDeck = [];
+          const suits = Object.values(SUITS);
+          const symbols = Object.values(SYMBOLS);
+          for (const suit of suits) {
+            for (let j = 0; j < symbols.length; j++) {
+              this.inDeck.push(new Card(symbols[j], suit, j + 2));
+            }
+          }
+          this.shuffle();
+        }
+
+        shuffle() {
+          for (let i = this.inDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.inDeck[i], this.inDeck[j]] = [this.inDeck[j], this.inDeck[i]];
+          }
+        }
+
+        dealCard() {
+          return this.inDeck.shift();
+        }
+      }
+
+      // =================================================================
+      // 4. MAIN APPLICATION LOGIC
+      // =================================================================
+
+      let state = {
+        playerName: null,
+        currentScreen: "welcome", // welcome, main_menu, bj_game, poker_game
+      };
+
+      function showMainMenu() {
+        print("\n----------------------------------------\n");
+        print("SELECT AN OPTION  ↓", "text-yellow");
+        print("Press 1 to see Black Jack instructions");
+        print("Press 2 to see Poker instructions");
+        print("Press 3 for Black Jack leaderboard");
+        print("Press 4 for Poker leaderboard");
+        print("Press 5 to play Black Jack");
+        print("Press 6 to play Poker");
+        print("Press 7 to quit game");
+        state.currentScreen = "main_menu";
+        onInputCallback = handleMainMenuInput;
+      }
+
+      async function handleMainMenuInput(command) {
+        const option = parseInt(command);
+        switch (option) {
+          case 1:
+            printArt(ASSETS.BLACKJACK_RULES);
+            showMainMenu();
+            break;
+          case 2:
+            printArt(ASSETS.POKER_RULES);
+            showMainMenu();
+            break;
+          case 3:
+            ASSETS.BJ_SCORES.forEach((line) => print(line, "text-yellow"));
+            showMainMenu();
+            break;
+          case 4:
+            ASSETS.POKER_SCORES.forEach((line) => print(line, "text-yellow"));
+            showMainMenu();
+            break;
+          case 5:
+            await startBlackjack();
+            break;
+          case 6:
+            await startPoker();
+            break;
+          case 7:
+            print("Thanks for playing! Refresh the page to start again.");
+            onInputCallback = null;
+            break;
+          default:
+            print("Invalid option! Please choose again.");
+            break;
+        }
+      }
+
+      function promptForName() {
+        print("Please enter your name:");
+        return new Promise((resolve) => {
+          onInputCallback = (name) => {
+            state.playerName = name || "Player 1";
+            resolve(state.playerName);
+          };
+        });
+      }
+
+      function getBet(bank, promptMessage) {
+        print(promptMessage, "text-green");
+        return new Promise((resolve) => {
+          onInputCallback = (betAmount) => {
+            const bet = parseInt(betAmount);
+            if (isNaN(bet)) {
+              print("That's not a number, please enter a number");
+              resolve(getBet(bank, promptMessage)); // re-prompt
+            } else if (bet > bank || bet < 0) {
+              print(`Invalid bet. You have £${bank} to bet.`);
+              resolve(getBet(bank, promptMessage)); // re-prompt
+            } else {
+              resolve(bet);
+            }
+          };
+        });
+      }
+
+      // --- BLACKJACK GAME LOGIC ---
+      async function startBlackjack() {
+        state.currentScreen = "bj_game";
+        if (!state.playerName) await promptForName();
+        print(
+          `Welcome, ${state.playerName}, to the wonderful world of Java BlackJack!`
+        );
+
+        let playerBank = 200;
+        let playAnother = true;
+
+        while (playAnother) {
+          let deck = new Deck();
+          deck.inDeck.forEach((card) => {
+            if (["J", "Q", "K"].includes(card.symbol)) card.value = 10;
+            else if (card.symbol === "A") card.value = 11;
+          });
+
+          let playerHand = [deck.dealCard(), deck.dealCard()];
+          let dealerHand = [deck.dealCard(), deck.dealCard()];
+
+          print(`\nYou have £${playerBank} in the bank.`);
+          const bet = await getBet(playerBank, "Please enter your bet:");
+          if (bet === 0) {
+            print("You must bet more than 0 to play.");
+            continue;
+          }
+          print(`Bet: £${bet}`);
+
+          // Player's Turn
+          let playerBust = false;
+          while (true) {
+            let playerTotal = playerHand.reduce(
+              (sum, card) => sum + card.value,
+              0
+            );
+            // Handle Aces being 1 or 11
+            let aceCount = playerHand.filter((c) => c.symbol === "A").length;
+            while (playerTotal > 21 && aceCount > 0) {
+              playerTotal -= 10;
+              aceCount--;
+            }
+
+            print("\nDealer's showing: " + dealerHand[0].getCard());
+            print(
+              "Your hand: " +
+                playerHand.map((c) => c.getCard()).join(" ") +
+                ` (Total: ${playerTotal})`
+            );
+
+            if (playerTotal > 21) {
+              print("YOU WENT BUST YOU BLOODY FOOL!", "text-red");
+              playerBust = true;
+              break;
+            }
+
+            print(
+              "Would you like to twist or stick? (Enter '1' to twist, '2' to stick)"
+            );
+            const choice = await new Promise((r) => (onInputCallback = r));
+            if (choice === "2") {
+              break;
+            } else if (choice === "1") {
+              playerHand.push(deck.dealCard());
+            } else {
+              print("Invalid choice. Please enter 1 or 2.");
+            }
+          }
+
+          // Dealer's Turn & Outcome
+          let playerFinalScore = playerHand.reduce((s, c) => s + c.value, 0);
+
+          if (playerBust) {
+            print("THE COMPUTER WINS THIS HAND MATEY", "text-red");
+            playerBank -= bet;
+            print(`YOU lost £${bet}. You now have £${playerBank} in the bank.`);
+          } else {
+            print("\nDealer's turn...");
+            print(
+              "Dealer reveals: " + dealerHand.map((c) => c.getCard()).join(" ")
+            );
+
+            let dealerTotal = dealerHand.reduce((s, c) => s + c.value, 0);
+            while (dealerTotal < 17) {
+              dealerHand.push(deck.dealCard());
+              print(
+                "Dealer hits: " + dealerHand.map((c) => c.getCard()).join(" ")
+              );
+              dealerTotal = dealerHand.reduce((s, c) => s + c.value, 0);
+            }
+
+            print(`Dealer's final hand total: ${dealerTotal}`);
+
+            if (dealerTotal > 21) {
+              print("LUCKY YOU THE DEALER WENT BUST!", "text-green");
+              playerBank += bet;
+              print(
+                `YOU WON £${bet}! You now have £${playerBank} in the bank.`
+              );
+            } else if (dealerTotal >= playerFinalScore) {
+              print("COMPUTER GOT A BETTER SCORE. COMPUTER WINS.", "text-red");
+              playerBank -= bet;
+              print(
+                `YOU lost £${bet}. You now have £${playerBank} in the bank.`
+              );
+            } else {
+              print(
+                "AGAINST THE ODDS YOU BEAT THE HOUSE, IT MUST BE YOUR LUCKY NIGHT",
+                "text-green"
+              );
+              playerBank += bet;
+              print(
+                `YOU WON £${bet}! You now have £${playerBank} in the bank.`
+              );
+            }
+          }
+
+          if (playerBank <= 0) {
+            print("\nYou're out of money! Thanks for playing.", "text-red");
+            break;
+          }
+
+          print(
+            "\nWOULD YOU LIKE TO PLAY ANOTHER ROUND? (1 for Yes, 2 for No)"
+          );
+          const playAgainChoice = await new Promise(
+            (r) => (onInputCallback = r)
+          );
+          if (playAgainChoice !== "1") {
+            playAnother = false;
+            ASSETS.BJ_SCORES.push(`###   ${state.playerName} : ${playerBank}`);
+            print(
+              "Thanks for playing! Your final score has been noted for this session."
+            );
+          }
+        }
+        showMainMenu();
+      }
+
+      // --- POKER GAME LOGIC ---
+      async function startPoker() {
+        state.currentScreen = "poker_game";
+        if (!state.playerName) await promptForName();
+        print(`Welcome, ${state.playerName}, let's play some 3-Card Poker!`);
+        print("Here is £200 to get you started. Good luck!", "text-yellow");
+
+        let bank = 200;
+        let isGameFinished = false;
+
+        while (!isGameFinished) {
+          print(`\n${state.playerName} has: £${bank} in the bank 💰`);
+
+          const ante = await getBet(bank, "Place ante to see your cards");
+          if (ante === 0) {
+            print("You must bet more than 0 to play.");
+            continue;
+          }
+          print(`Ante: £${ante}`);
+
+          let deck = new Deck();
+          let playerHand = [
+            deck.dealCard(),
+            deck.dealCard(),
+            deck.dealCard(),
+          ].sort((a, b) => b.value - a.value);
+          let computerHand = [
+            deck.dealCard(),
+            deck.dealCard(),
+            deck.dealCard(),
+          ].sort((a, b) => b.value - a.value);
+
+          print(`\n${state.playerName}'s Hand:`, "text-cyan");
+          print(playerHand.map((c) => `|${c.getCard()}|`).join("  "));
+
+          const bet = await getBet(
+            bank - ante,
+            "Enter your bet to see computer's cards or 0 to fold"
+          );
+
+          if (bet === 0) {
+            print(
+              `${state.playerName} has folded and lost the ante: £${ante}`,
+              "text-red"
+            );
+            bank -= ante;
+          } else {
+            print(`Bet: £${bet}`);
+            print("\nComputer's Hand:", "text-purple");
+            print(computerHand.map((c) => `|${c.getCard()}|`).join("  "));
+            print(`\n${state.playerName}'s Hand:`, "text-cyan");
+            print(playerHand.map((c) => `|${c.getCard()}|`).join("  "));
+
+            // Simplified winner determination
+            const getHandRank = (hand) => {
+              const isFlush =
+                hand[0].suit === hand[1].suit && hand[1].suit === hand[2].suit;
+              const isStraight =
+                hand[0].value - 1 === hand[1].value &&
+                hand[1].value - 1 === hand[2].value;
+              const isThreeOfAKind =
+                hand[0].value === hand[1].value &&
+                hand[1].value === hand[2].value;
+              const isPair =
+                hand[0].value === hand[1].value ||
+                hand[1].value === hand[2].value;
+
+              if (isStraight && isFlush) return 5; // Straight Flush
+              if (isThreeOfAKind) return 4; // Three of a Kind
+              if (isStraight) return 3; // Straight
+              if (isFlush) return 2; // Flush
+              if (isPair) return 1; // Pair
+              return 0; // High Card
+            };
+
+            const playerRank = getHandRank(playerHand);
+            const dealerRank = getHandRank(computerHand);
+            const pot = ante + bet;
+
+            let playerWins = false;
+            if (playerRank > dealerRank) {
+              playerWins = true;
+            } else if (playerRank === dealerRank) {
+              // Tie-breaker on high card
+              if (playerHand[0].value > computerHand[0].value)
+                playerWins = true;
+              else if (
+                playerHand[0].value === computerHand[0].value &&
+                playerHand[1].value > computerHand[1].value
+              )
+                playerWins = true;
+              else if (
+                playerHand[0].value === computerHand[0].value &&
+                playerHand[1].value === computerHand[1].value &&
+                playerHand[2].value > computerHand[2].value
+              )
+                playerWins = true;
+            }
+
+            if (playerWins) {
+              print(`\n${state.playerName} wins!`, "text-green");
+              bank += pot;
+              print(`${state.playerName} gets £${pot} added to the bank.`);
+            } else {
+              print(`\nComputer wins`, "text-red");
+              bank -= pot;
+              print(`Player loses: £${pot}`);
+            }
+          }
+
+          print(`\n${state.playerName} has £${bank} in the bank.`);
+
+          if (bank <= 0) {
+            print(
+              "Not so fast cowboy, you've lost all your money, go home.",
+              "text-red"
+            );
+            isGameFinished = true;
+            break;
+          }
+
+          print(
+            "\nPlay another round? (enter 'y' for yes or any other letter for no)"
+          );
+          const playAgain = await new Promise((r) => (onInputCallback = r));
+          if (playAgain.toUpperCase() !== "Y") {
+            isGameFinished = true;
+            ASSETS.POKER_SCORES.push(`###   ${state.playerName} : ${bank}`);
+            print(
+              "Thanks for playing! Your final score has been noted for this session."
+            );
+          }
+        }
+        showMainMenu();
+      }
+
+      // --- APPLICATION START ---
+      function startApp() {
+        clearTerminal();
+        printArt(ASSETS.WELCOME);
+        showMainMenu();
+      }
+
+      startApp();
+    </script>
+  </body>
+</html>
